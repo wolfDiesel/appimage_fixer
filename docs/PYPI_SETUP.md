@@ -1,5 +1,35 @@
 # Настройка PyPI Trusted Publishing
 
+## 🚀 Быстрое решение - API токен
+
+Если trusted publishing не работает, используйте API токен:
+
+### 1. Создайте API токен в PyPI:
+1. Войдите в https://pypi.org/
+2. Account Settings → API tokens → Add API token
+3. **Scope**: Project: appimage-fixer
+4. **Token name**: `appimage-fixer-github-actions`
+5. Скопируйте токен
+
+### 2. Добавьте токен в GitHub Secrets:
+1. GitHub → Repository Settings → Secrets and variables → Actions
+2. New repository secret:
+   - **Name**: `PYPI_API_TOKEN`
+   - **Value**: ваш токен из PyPI
+
+### 3. Обновите workflow:
+```yaml
+- name: Publish to PyPI
+  uses: pypa/gh-action-pypi-publish@release/v1
+  with:
+    password: ${{ secrets.PYPI_API_TOKEN }}
+    skip-existing: true
+```
+
+### 4. Создайте новый релиз для тестирования
+
+---
+
 ## Обзор
 
 Для автоматической публикации пакетов в PyPI через GitHub Actions используется **Trusted Publishing** - новый безопасный метод аутентификации без API токенов.
