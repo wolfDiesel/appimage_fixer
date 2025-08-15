@@ -12,7 +12,7 @@ import configparser
 import os
 import subprocess
 from pathlib import Path
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Any
 import logging
 
 logger = logging.getLogger(__name__)
@@ -213,7 +213,7 @@ class AppImageDIntegration:
         except Exception:
             return False
 
-    def get_appimaged_status(self) -> Dict[str, any]:
+    def get_appimaged_status(self) -> Dict[str, Any]:
         """Get AppImageD daemon status information."""
         status = {
             "running": False,
