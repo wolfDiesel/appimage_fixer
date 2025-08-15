@@ -96,7 +96,7 @@ class TestAppImageDIntegration:
         """Test getting desktop file directories."""
         # Mock all directories as existing
         mock_exists.return_value = True
-        
+
         directories = self.integration.get_desktop_file_directories()
         expected_dirs = [
             Path.home() / ".local/share/applications",
