@@ -91,12 +91,17 @@ class TestAppImageDIntegration:
                 for expected_dir in expected_dirs:
                     assert expected_dir in directories
 
-    def test_get_desktop_file_directories(self):
+    @patch("pathlib.Path.exists")
+    def test_get_desktop_file_directories(self, mock_exists):
         """Test getting desktop file directories."""
+        # Mock all directories as existing
+        mock_exists.return_value = True
+        
         directories = self.integration.get_desktop_file_directories()
         expected_dirs = [
             Path.home() / ".local/share/applications",
             Path("/usr/share/applications"),
+            Path("/usr/local/share/applications"),
         ]
         for expected_dir in expected_dirs:
             assert expected_dir in directories
