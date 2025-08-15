@@ -146,7 +146,7 @@ def check_appimaged_integration():
     mapping = integration.get_appimage_desktop_mapping()
     for appimage_path, desktop_path in mapping.items():
         status = "✓" if desktop_path else "✗"
-        desktop_name = desktop_path.name if desktop_path else 'No desktop file'
+        desktop_name = desktop_path.name if desktop_path else "No desktop file"
         print(f"  {status} {appimage_path.name} -> {desktop_name}")
 
 

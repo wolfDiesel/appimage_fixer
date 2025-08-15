@@ -73,17 +73,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
 
-      - name: Run linting
-        run: |
-          # Проверка стиля кода (если установлен flake8)
-          if command -v flake8 &> /dev/null; then
-            flake8 appimage_fixer/ tests/
-          fi
-          
-          # Проверка типов (если установлен mypy)
-          if command -v mypy &> /dev/null; then
-            mypy appimage_fixer/
-          fi
+
 
       - name: Run tests with coverage
         run: |

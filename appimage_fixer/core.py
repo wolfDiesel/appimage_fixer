@@ -654,7 +654,8 @@ class AppImageFixer:
         self.log(
             f"Database updated: {
                 db_result['updated']} records, cleaned: {
-                db_result['cleaned']} orphaned")
+                db_result['cleaned']} orphaned"
+        )
 
         desktop_files = self.find_appimage_files()
 
