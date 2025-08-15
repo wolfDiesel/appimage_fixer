@@ -38,13 +38,18 @@ dev = [
     "pytest-cov>=2.0", 
     "black>=22.0",
     "mypy>=0.900",
+    "flake8>=4.0",
+    "bandit>=1.7",
+    "safety>=2.0",
+    "twine>=4.0",
+    "build>=0.10",
 ]
 
 [project.urls]
-Homepage = "https://github.com/akopylov/appimage-fixer"
-Repository = "https://github.com/akopylov/appimage-fixer.git"
-Documentation = "https://github.com/akopylov/appimage-fixer/blob/main/README.md"
-"Bug Reports" = "https://github.com/akopylov/appimage-fixer/issues"
+Homepage = "https://github.com/wolfDiesel/appimage_fixer"
+Repository = "https://github.com/wolfDiesel/appimage_fixer.git"
+Documentation = "https://github.com/wolfDiesel/appimage_fixer/blob/main/README.md"
+"Bug Reports" = "https://github.com/wolfDiesel/appimage_fixer/issues"
 
 [project.scripts]
 appimage-fixer = "appimage_fixer.cli:main"

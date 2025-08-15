@@ -1,0 +1,188 @@
+name: Release Package
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'  # Запускается только при тегах формата vX.Y.Z
+
+env:
+  PYTHON_VERSION: '3.12'
+  PYTHON_MIN_VERSION: '3.8'
+
+jobs:
+  # Проверка, что тег находится на ветке main
+  validate-tag:
+    runs-on: ubuntu-latest
+    outputs:
+      is-main-branch: ${{ steps.check-branch.outputs.is-main }}
+      tag-version: ${{ steps.extract-version.outputs.version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Получаем полную историю для проверки ветки
+
+      - name: Extract version from tag
+        id: extract-version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/}
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "Extracted version: ${VERSION}"
+
+      - name: Check if tag is on main branch
+        id: check-branch
+        run: |
+          # Проверяем, что тег находится на ветке main
+          if git branch -r --contains ${{ github.sha }} | grep -q "origin/main"; then
+            echo "is-main=true" >> $GITHUB_OUTPUT
+            echo "✅ Tag is on main branch"
+          else
+            echo "is-main=false" >> $GITHUB_OUTPUT
+            echo "❌ Tag is NOT on main branch"
+            exit 1
+          fi
+
+  # Тестирование и проверка качества кода
+  test:
+    needs: validate-tag
+    if: needs.validate-tag.outputs.is-main-branch == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('**/pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-${{ matrix.python-version }}-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Run linting
+        run: |
+          # Проверка стиля кода (если установлен flake8)
+          if command -v flake8 &> /dev/null; then
+            flake8 appimage_fixer/ tests/
+          fi
+          
+          # Проверка типов (если установлен mypy)
+          if command -v mypy &> /dev/null; then
+            mypy appimage_fixer/
+          fi
+
+      - name: Run tests with coverage
+        run: |
+          pytest tests/ --cov=appimage_fixer --cov-report=xml --cov-report=term-missing
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+
+  # Сборка и публикация пакета
+  build-and-publish:
+    needs: [validate-tag, test]
+    if: needs.validate-tag.outputs.is-main-branch == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+      id-token: write  # Для PyPI
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install build twine
+
+      - name: Build package
+        run: |
+          python -m build
+
+      - name: Check package
+        run: |
+          twine check dist/*
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
+          skip-existing: true
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ needs.validate-tag.outputs.tag-version }}
+          name: Release ${{ needs.validate-tag.outputs.tag-version }}
+          body: |
+            ## 🚀 AppImage Fixer ${{ needs.validate-tag.outputs.tag-version }}
+            
+            ### 📦 Установка
+            ```bash
+            pip install appimage-fixer==${{ needs.validate-tag.outputs.tag-version }}
+            ```
+            
+            ### 🔧 Основные возможности
+            - Исправление desktop файлов AppImage
+            - Интеграция с AppImageD
+            - Отслеживание версий в базе данных
+            - Автоматизация через systemd
+            
+            ### 📋 Изменения
+            См. [CHANGELOG.md](https://github.com/wolfDiesel/appimage_fixer/blob/main/CHANGELOG.md) для подробностей.
+            
+            ### 📚 Документация
+            - [Установка](https://github.com/wolfDiesel/appimage_fixer/blob/main/docs/INSTALLATION.md)
+            - [Использование](https://github.com/wolfDiesel/appimage_fixer/blob/main/docs/USAGE.md)
+            - [FAQ](https://github.com/wolfDiesel/appimage_fixer/blob/main/docs/FAQ.md)
+          draft: false
+          prerelease: false
+          files: |
+            dist/*.whl
+            dist/*.tar.gz
+
+  # Уведомления
+  notify:
+    needs: [validate-tag, test, build-and-publish]
+    if: always() && needs.validate-tag.outputs.is-main-branch == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify success
+        if: needs.build-and-publish.result == 'success'
+        run: |
+          echo "✅ Release ${{ needs.validate-tag.outputs.tag-version }} успешно опубликован!"
+          echo "📦 PyPI: https://pypi.org/project/appimage-fixer/"
+          echo "🏷️  GitHub Release: https://github.com/wolfDiesel/appimage_fixer/releases/tag/${{ needs.validate-tag.outputs.tag-version }}"
+
+      - name: Notify failure
+        if: needs.build-and-publish.result == 'failure'
+        run: |
+          echo "❌ Ошибка при публикации релиза ${{ needs.validate-tag.outputs.tag-version }}"
+          exit 1
