@@ -652,9 +652,8 @@ class AppImageFixer:
         # Update database first
         db_result = self.scan_and_update_database()
         self.log(
-            f"Database updated: {
-                db_result['updated']} records, cleaned: {
-                db_result['cleaned']} orphaned"
+            f"Database updated: {db_result['updated']} records, "
+            f"cleaned: {db_result['cleaned']} orphaned"
         )
 
         desktop_files = self.find_appimage_files()
