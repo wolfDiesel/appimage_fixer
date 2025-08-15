@@ -11,7 +11,7 @@ License: MIT
 Version: 1.1.0
 """
 
-__version__ = "1.2.7"
+__version__ = "1.2.8"
 __author__ = "AI Assistant & akopylov"
 __email__ = "user@example.com"
 __license__ = "MIT"
